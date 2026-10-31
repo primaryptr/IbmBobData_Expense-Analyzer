@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Expense Analyzer — Pahami ke mana uangmu pergi." />
+  <title>Expense Analyzer</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Inter font (optional — gracefully falls back to system font) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ================================================================
+     TOP NAVIGATION
+     ================================================================ -->
+<nav id="navbar" role="navigation" aria-label="Navigasi utama">
+  <div class="container">
+    <div class="navbar-inner">
+
+      <!-- Brand -->
+      <a href="#" class="navbar-brand" aria-label="Expense Analyzer home">
+        <span class="navbar-logo" aria-hidden="true">EA</span>
+        <span class="navbar-title">Expense <span>Analyzer</span></span>
+      </a>
+
+      <!-- Right side -->
+      <div class="navbar-right">
+        <span id="nav-period" class="navbar-period"></span>
+        <div id="nav-avatar" class="navbar-avatar" title="Profil pengguna" role="img" aria-label="Avatar pengguna"></div>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<!-- ================================================================
+     MAIN CONTENT
+     ================================================================ -->
+<main id="app-main" class="container" aria-live="polite">
+
+  <!-- ── GREETING ── -->
+  <section class="greeting fade-up" aria-labelledby="greeting-heading">
+    <h1 id="greeting-heading">
+      Halo, <span id="greeting-name">…</span> 👋
+    </h1>
+    <p>Berikut ringkasan pengeluaranmu 6 bulan terakhir. Yuk, pahami ke mana uangmu pergi!</p>
+  </section>
+
+  <!-- ── FILTER BAR ── -->
+  <section id="filters-bar" class="fade-up-1" aria-labelledby="filter-heading">
+    <div class="filters-title" id="filter-heading">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+      </svg>
+      Filter Data
+    </div>
+
+    <div class="filters-grid">
+
+      <!-- Kategori -->
+      <div class="filter-group">
+        <label class="filter-label" for="f-category">Kategori</label>
+        <select id="f-category" class="filter-select" aria-label="Filter berdasarkan kategori">
+          <option value="">Semua Kategori</option>
+        </select>
+      </div>
+
+      <!-- Metode Pembayaran -->
+      <div class="filter-group">
+        <label class="filter-label" for="f-payment">Metode Pembayaran</label>
+        <select id="f-payment" class="filter-select" aria-label="Filter berdasarkan metode pembayaran">
+          <option value="">Semua Metode</option>
+        </select>
+      </div>
+
+      <!-- Tanggal Dari -->
+      <div class="filter-group">
+        <label class="filter-label" for="f-date-from">Dari Tanggal</label>
+        <input id="f-date-from" type="date" class="filter-input" aria-label="Tanggal mulai filter" />
+      </div>
+
+      <!-- Tanggal Sampai -->
+      <div class="filter-group">
+        <label class="filter-label" for="f-date-to">Sampai Tanggal</label>
+        <input id="f-date-to" type="date" class="filter-input" aria-label="Tanggal akhir filter" />
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="filters-actions">
+      <button data-preset="all" class="btn btn-secondary btn-sm" aria-label="Tampilkan semua periode">Semua</button>
+      <button data-preset="3m"  class="btn btn-secondary btn-sm" aria-label="Tampilkan 3 bulan terakhir">3 Bulan</button>
+      <button data-preset="1m"  class="btn btn-secondary btn-sm" aria-label="Tampilkan 1 bulan terakhir">1 Bulan</button>
+      <button id="btn-reset"    class="btn btn-secondary btn-sm" style="margin-left:auto" aria-label="Reset semua filter">
+        ↺ Reset Filter
+      </button>
+    </div>
+  </section>
+
+  <!-- ── KPI CARDS ── -->
+  <section aria-labelledby="kpi-heading" class="fade-up-2">
+    <h2 id="kpi-heading" class="sr-only">Ringkasan KPI</h2>
+
+    <div class="kpi-grid">
+
+      <!-- Total Pengeluaran -->
+      <article class="kpi-card" aria-label="Total pengeluaran">
+        <div class="kpi-icon" style="background:#ede9fe" aria-hidden="true">💰</div>
+        <span class="kpi-label">Total Pengeluaran</span>
+        <strong id="kpi-total" class="kpi-value">—</strong>
+        <span class="kpi-sub">periode terpilih</span>
+      </article>
+
+      <!-- Rata-rata per Hari -->
+      <article class="kpi-card" aria-label="Rata-rata pengeluaran per hari">
+        <div class="kpi-icon" style="background:#dbeafe" aria-hidden="true">📅</div>
+        <span class="kpi-label">Rata-rata / Hari</span>
+        <strong id="kpi-daily" class="kpi-value">—</strong>
+        <span class="kpi-sub">per hari aktif</span>
+      </article>
+
+      <!-- Kategori Terbesar -->
+      <article class="kpi-card" aria-label="Kategori pengeluaran terbesar">
+        <div class="kpi-icon" style="background:#fef3c7" aria-hidden="true">📊</div>
+        <span class="kpi-label">Kategori Terbesar</span>
+        <strong id="kpi-top-cat" class="kpi-value" style="font-size:16px">—</strong>
+        <span id="kpi-top-cat-sub" class="kpi-sub"></span>
+      </article>
+
+      <!-- Jumlah Transaksi -->
+      <article class="kpi-card" aria-label="Jumlah transaksi">
+        <div class="kpi-icon" style="background:#d1fae5" aria-hidden="true">🧾</div>
+        <span class="kpi-label">Jumlah Transaksi</span>
+        <strong id="kpi-count" class="kpi-value">—</strong>
+        <span class="kpi-sub">entri tercatat</span>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── SPENDING TREND (Line Chart — full width) ── -->
+  <section class="card fade-up-2" aria-labelledby="trend-heading">
+    <header class="card-header">
+      <h2 class="card-title" id="trend-heading">
+        <span class="icon" style="background:#ede9fe" aria-hidden="true">📈</span>
+        Tren Pengeluaran per Bulan
+      </h2>
+    </header>
+    <div class="chart-wrap chart-h-260" role="img" aria-label="Grafik tren pengeluaran bulanan">
+      <canvas id="chart-trend"></canvas>
+    </div>
+  </section>
+
+  <!-- ── CHARTS ROW: Category + Needs vs Wants ── -->
+  <div class="charts-grid-2 fade-up-3">
+
+    <!-- Pengeluaran per Kategori (Doughnut) -->
+    <section class="card" aria-labelledby="cat-chart-heading">
+      <header class="card-header">
+        <h2 class="card-title" id="cat-chart-heading">
+          <span class="icon" style="background:#fef3c7" aria-hidden="true">🍩</span>
+          Pengeluaran per Kategori
+        </h2>
+      </header>
+      <div class="chart-wrap chart-h-200" role="img" aria-label="Grafik donat pengeluaran per kategori">
+        <canvas id="chart-category"></canvas>
+      </div>
+      <!-- Category breakdown list (rendered by JS) -->
+      <ul id="category-list" class="cat-list" style="margin-top:16px" aria-label="Rincian per kategori"></ul>
+    </section>
+
+    <!-- Needs vs Wants (Doughnut) -->
+    <section class="card" aria-labelledby="nw-heading">
+      <header class="card-header">
+        <h2 class="card-title" id="nw-heading">
+          <span class="icon" style="background:#d1fae5" aria-hidden="true">⚖️</span>
+          Needs vs Wants
+        </h2>
+      </header>
+      <div class="chart-wrap chart-h-200" role="img" aria-label="Grafik donat kebutuhan vs keinginan">
+        <canvas id="chart-nw"></canvas>
+      </div>
+      <!-- Needs/Wants summary stats -->
+      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:#f0fdf4;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Needs</div>
+          <div id="nw-needs-pct" style="font-size:22px;font-weight:700;color:#16a34a">—</div>
+          <div id="nw-needs-amt" style="font-size:11px;color:#64748b"></div>
+        </div>
+        <div style="background:#fff1f2;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#e11d48;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Wants</div>
+          <div id="nw-wants-pct" style="font-size:22px;font-weight:700;color:#e11d48">—</div>
+          <div id="nw-wants-amt" style="font-size:11px;color:#64748b"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ── PAYMENT METHOD (Horizontal Bar) ── -->
+  <section class="card fade-up-3" aria-labelledby="payment-heading">
+    <header class="card-header">
+      <h2 class="card-title" id="payment-heading">
+        <span class="icon" style="background:#e0f2fe" aria-hidden="true">💳</span>
+        Penggunaan Metode Pembayaran
+      </h2>
+    </header>
+    <div class="chart-wrap chart-h-200" role="img" aria-label="Grafik batang penggunaan metode pembayaran">
+      <canvas id="chart-payment"></canvas>
+    </div>
+  </section>
+
+  <!-- ── TOP 10 TABLE ── -->
+  <section class="card fade-up-4" aria-labelledby="top10-heading">
+    <header class="card-header">
+      <h2 class="card-title" id="top10-heading">
+        <span class="icon" style="background:#fce7f3" aria-hidden="true">🏆</span>
+        Top 10 Pengeluaran Terbesar
+      </h2>
+    </header>
+
+    <div class="table-wrap">
+      <table class="data-table" aria-label="Tabel 10 pengeluaran terbesar">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Deskripsi</th>
+            <th scope="col">Kategori</th>
+            <th scope="col">Nominal</th>
+            <th scope="col">Tipe</th>
+          </tr>
+        </thead>
+        <tbody id="top10-body">
+          <!-- Populated by script.js -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── INSIGHT OTOMATIS ── -->
+  <section id="insight-section" class="card fade-up-4" aria-labelledby="insight-heading">
+    <h2 class="insight-title" id="insight-heading">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Insight Otomatis
+    </h2>
+    <div id="insight-list" aria-live="polite">
+      <!-- Populated by script.js -->
+    </div>
+  </section>
+
+</main>
+
+<!-- ================================================================
+     TOAST NOTIFICATION
+     ================================================================ -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true">
+  <span class="toast-dot"></span>
+  <span class="toast-text">—</span>
+</div>
+
+<!-- ================================================================
+     APP SCRIPT
+     ================================================================ -->
+<script src="script.js"></script>
+
+</body>
+</html>
